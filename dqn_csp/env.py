@@ -15,9 +15,9 @@ class Environment:
         var_dom = {x[0]: x[1] for x in self.var_dom}
         self.var_dom = var_dom
         self.ordering = []
-        self.cur_var_start_idx = -1
         self.partial_assignment = dict()
         self.cur_involved_functions = []
+        self.counted_func = 0
 
     def reset(self, shuffle=True):
         self.ordering = list(self.var_dom.keys())
@@ -40,14 +40,17 @@ class Environment:
         var_start_index = dict()
         scatter_index = []
         idx = 0
+        scatter_norm = []
         for var in admissible_vars:
             var_start_index[var] = len(x)
             dom = 1 if var in self.partial_assignment else self.var_dom[var]
+            scatter_norm.append(dom)
             for _ in range(dom):
                 x.append(self.var_id_encoding[var])
                 scatter_index.append(idx)
             idx += 1
         scatter_index = torch.tensor(scatter_index, dtype=torch.long, device=self.device)
+        scatter_norm = torch.tensor(scatter_norm, dtype=torch.float32, device=self.device).unsqueeze(1)
         x = torch.stack(x, dim=0)
         edge_index = [[], []]
         src, dest = edge_index
@@ -61,29 +64,32 @@ class Environment:
                 dom2 = [self.partial_assignment[var2]]
             else:
                 dom2 = [k for k in range(self.var_dom[var2])]
-            for i in dom1:
-                for j in dom2:
-                    edge_attr.append(func[i][j])
-                    edge_attr.append(func[i][j])
+            for i, val1 in enumerate(dom1):
+                for j, val2 in enumerate(dom2):
+                    edge_attr.append(func[val1][val2])
+                    edge_attr.append(func[val1][val2])
                     src.append(var_start_index[var1] + i)
                     dest.append(var_start_index[var2] + j)
                     dest.append(var_start_index[var1] + i)
                     src.append(var_start_index[var2] + j)
         edge_index = torch.tensor(edge_index, dtype=torch.long, device=self.device)
-        edge_attr = torch.tensor(edge_attr, dtype=torch.float32, device=self.device)
+        edge_attr = torch.tensor(edge_attr, dtype=torch.float32, device=self.device).unsqueeze(1)
 
         cur_var = self.ordering[0]
-        self.cur_var_start_idx = var_start_index[cur_var]
-        action_space = [self.cur_var_start_idx + i for i in range(self.var_dom[cur_var])]
-        return x, edge_index, edge_attr, scatter_index, action_space
+        action_space = [var_start_index[cur_var] + i for i in range(self.var_dom[cur_var])]
+        return x, edge_index, edge_attr, scatter_index, scatter_norm, action_space
 
     def act(self, action, scale=1.0):
-        action -= self.cur_var_start_idx
         cur_var = self.ordering.pop(0)
         reward = 0
+        self.counted_func += len(self.cur_involved_functions)
+        if len(self.ordering) == 0:
+            assert len(self.functions) == self.counted_func
+            self.counted_func = 0
         for func, var1, var2 in self.cur_involved_functions:
             if cur_var == var1:
                 reward += func[action][self.partial_assignment[var2]]
             else:
                 reward += func[self.partial_assignment[var1]][action]
+        self.partial_assignment[cur_var] = action
         return -reward / scale, len(self.ordering) == 0

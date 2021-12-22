@@ -78,7 +78,7 @@ class Problem:
         edge_cnt = int(nb_agent * (nb_agent - 1) / 2 * p1) - (nb_agent - 1)
         remaining = set([x for x in self.agents])
         while edge_cnt > 0:
-            matrix = Problem._random_matrix(domain_size, domain_size, min_cost, max_cost, gc, weighted, decimal)
+            matrix = Problem._random_matrix(domain_size, domain_size, min_cost, max_cost, gc, weighted, decimal, p2=p2)
             while True:
                 agents = random.sample(remaining, 2)
                 if self.add_constraint(agents, matrix):
