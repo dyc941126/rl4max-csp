@@ -4,8 +4,8 @@ from core.problem import Problem
 
 
 if __name__ == '__main__':
-    nb_instances = 200
-    pth = '../problems/train'
+    nb_instances = 20
+    pth = '../problems/valid'
     for i in range(nb_instances):
         nb_agents = random.randint(40, 60)
         p1 = random.random() * 0.25

@@ -21,5 +21,5 @@ if __name__ == '__main__':
     model = GATNet(4, 16, 1)
     target_model = GATNet(4, 16, 1)
     optimizer = AdamW(model.parameters(), lr=.0001, weight_decay=5e-5)
-    dqn = DQNAgent(train_files, valid_files, model, target_model, optimizer, device='cuda:2')
+    dqn = DQNAgent(train_files, valid_files, model, target_model, optimizer, device='cuda:7')
     dqn.train(100000)

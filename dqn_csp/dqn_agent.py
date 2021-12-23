@@ -106,12 +106,12 @@ class DQNAgent:
         self.model.train()
         loss = F.mse_loss(pred, targets)
         loss.backward()
-        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
         self.optimizer.step()
         self._soft_update()
         return loss.item()
 
-    def _soft_update(self, tau=.001):
+    def _soft_update(self, tau=.0001):
         for t_param, param in zip(self.target_model.parameters(), self.model.parameters()):
             new_param = tau * param.data + (1.0 - tau) * t_param.data
             t_param.data.copy_(new_param)
