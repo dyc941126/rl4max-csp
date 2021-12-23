@@ -42,7 +42,8 @@ class DQNAgent:
             losses = [0]
             while True:
                 if ep != 0:
-                    losses.append(self._learn(batch_size))
+                    for _ in range(5):
+                        losses.append(self._learn(batch_size))
                 x, edge_index, edge_attr, scatter_index, scatter_norm, action_space = env.observe()
                 s_prime = Data(x, edge_index, edge_attr, scatter_index=scatter_index, scatter_norm=scatter_norm, action_space=action_space)
                 if len(sar) != 0:
